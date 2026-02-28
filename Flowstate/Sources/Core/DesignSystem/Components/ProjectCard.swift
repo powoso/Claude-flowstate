@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Project Card
 // Used in project list and project picker.
 
-public struct ProjectCardData: Sendable {
+public struct ProjectCardData: @unchecked Sendable {
     public let id: String
     public let name: String
     public let color: Color

@@ -4,7 +4,7 @@ import SwiftUI
 // The core list cell used everywhere tasks appear.
 // Supports swipe actions, priority indicators, metadata chips, and accessibility.
 
-public struct TaskRowData: Sendable {
+public struct TaskRowData: @unchecked Sendable {
     public let id: String
     public var title: String
     public var isCompleted: Bool

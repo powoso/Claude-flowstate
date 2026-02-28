@@ -1,4 +1,5 @@
-import SwiftUI
+#if canImport(UIKit)
+import UIKit
 
 // MARK: - Flowstate Haptic System
 // Consistent haptic language across the app.
@@ -35,3 +36,17 @@ public enum FlowHaptics {
         UINotificationFeedbackGenerator().notificationOccurred(.error)
     }
 }
+
+#else
+
+// macOS stub — haptics are iOS-only.
+public enum FlowHaptics {
+    public static func selection() {}
+    public static func taskComplete() {}
+    public static func snap() {}
+    public static func success() {}
+    public static func warning() {}
+    public static func error() {}
+}
+
+#endif

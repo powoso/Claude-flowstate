@@ -1,6 +1,7 @@
 import SwiftUI
 import DesignSystem
 import Storage
+import NLParser
 
 // MARK: - Inbox View
 // Quick capture with natural language input + unsorted task list.
