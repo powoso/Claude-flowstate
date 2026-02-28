@@ -36,7 +36,7 @@ public final class InboxViewModel {
         errorMessage = nil
 
         do {
-            tasks = try await repository.fetchInboxTasks()
+            tasks = try repository.fetchInboxTasks()
         } catch {
             errorMessage = "Couldn't load your inbox. Pull to try again."
         }
@@ -61,11 +61,11 @@ public final class InboxViewModel {
         do {
             // Create tags
             for tagName in parsed.tags {
-                let tag = try await repository.findOrCreateTag(name: tagName)
+                let tag = try repository.findOrCreateTag(name: tagName)
                 task.tags.append(tag)
             }
 
-            try await repository.createTask(task)
+            try repository.createTask(task)
             inputText = ""
             parsedPreview = ParsedTask()
             parsedEntities = []
@@ -89,9 +89,9 @@ public final class InboxViewModel {
     public func toggleComplete(_ task: FlowTask) async {
         do {
             if task.isCompleted {
-                try await repository.uncompleteTask(task)
+                try repository.uncompleteTask(task)
             } else {
-                try await repository.completeTask(task)
+                try repository.completeTask(task)
             }
             await loadTasks()
         } catch {
@@ -101,7 +101,7 @@ public final class InboxViewModel {
 
     public func deleteTask(_ task: FlowTask) async {
         do {
-            try await repository.deleteTask(task)
+            try repository.deleteTask(task)
             await loadTasks()
         } catch {
             errorMessage = "Couldn't delete task."

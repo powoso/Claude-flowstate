@@ -3,64 +3,72 @@ import Foundation
 
 // MARK: - Task Repository Protocol
 // All business logic goes through this protocol. Enables testing with mocks.
+// @MainActor because SwiftData model objects are not Sendable and must stay
+// on the actor that owns their ModelContext.
 
-public protocol TaskRepositoryProtocol: Sendable {
+@MainActor
+public protocol TaskRepositoryProtocol {
     // MARK: Tasks
-    func createTask(_ task: FlowTask) async throws
-    func updateTask(_ task: FlowTask) async throws
-    func deleteTask(_ task: FlowTask) async throws
-    func completeTask(_ task: FlowTask) async throws
-    func uncompleteTask(_ task: FlowTask) async throws
+    func createTask(_ task: FlowTask) throws
+    func updateTask(_ task: FlowTask) throws
+    func deleteTask(_ task: FlowTask) throws
+    func completeTask(_ task: FlowTask) throws
+    func uncompleteTask(_ task: FlowTask) throws
 
-    func fetchInboxTasks() async throws -> [FlowTask]
-    func fetchTodayTasks() async throws -> [FlowTask]
-    func fetchOverdueTasks() async throws -> [FlowTask]
-    func fetchUpcomingTasks(days: Int) async throws -> [FlowTask]
-    func fetchTasksForProject(_ projectID: UUID) async throws -> [FlowTask]
-    func searchTasks(query: String) async throws -> [FlowTask]
+    func fetchInboxTasks() throws -> [FlowTask]
+    func fetchTodayTasks() throws -> [FlowTask]
+    func fetchOverdueTasks() throws -> [FlowTask]
+    func fetchUpcomingTasks(days: Int) throws -> [FlowTask]
+    func fetchTasksForProject(_ projectID: UUID) throws -> [FlowTask]
+    func searchTasks(query: String) throws -> [FlowTask]
 
     // MARK: Projects
-    func createProject(_ project: FlowProject) async throws
-    func fetchAllProjects() async throws -> [FlowProject]
-    func deleteProject(_ project: FlowProject) async throws
+    func createProject(_ project: FlowProject) throws
+    func fetchAllProjects() throws -> [FlowProject]
+    func deleteProject(_ project: FlowProject) throws
 
     // MARK: Tags
-    func createTag(_ tag: FlowTag) async throws
-    func fetchAllTags() async throws -> [FlowTag]
-    func findOrCreateTag(name: String) async throws -> FlowTag
+    func createTag(_ tag: FlowTag) throws
+    func fetchAllTags() throws -> [FlowTag]
+    func findOrCreateTag(name: String) throws -> FlowTag
 }
 
 // MARK: - SwiftData Implementation
 
-@ModelActor
-public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
+@MainActor
+public final class SwiftDataTaskRepository: TaskRepositoryProtocol {
+    private let modelContext: ModelContext
+
+    public init(modelContainer: ModelContainer) {
+        self.modelContext = modelContainer.mainContext
+    }
 
     // MARK: - Task CRUD
 
-    public func createTask(_ task: FlowTask) async throws {
+    public func createTask(_ task: FlowTask) throws {
         modelContext.insert(task)
         try modelContext.save()
     }
 
-    public func updateTask(_ task: FlowTask) async throws {
+    public func updateTask(_ task: FlowTask) throws {
         task.updatedAt = .now
         try modelContext.save()
     }
 
-    public func deleteTask(_ task: FlowTask) async throws {
+    public func deleteTask(_ task: FlowTask) throws {
         task.isArchived = true
         task.archivedAt = .now
         try modelContext.save()
     }
 
-    public func completeTask(_ task: FlowTask) async throws {
+    public func completeTask(_ task: FlowTask) throws {
         task.isCompleted = true
         task.completedAt = .now
         task.updatedAt = .now
         try modelContext.save()
     }
 
-    public func uncompleteTask(_ task: FlowTask) async throws {
+    public func uncompleteTask(_ task: FlowTask) throws {
         task.isCompleted = false
         task.completedAt = nil
         task.updatedAt = .now
@@ -69,7 +77,7 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
 
     // MARK: - Task Queries
 
-    public func fetchInboxTasks() async throws -> [FlowTask] {
+    public func fetchInboxTasks() throws -> [FlowTask] {
         let descriptor = FetchDescriptor<FlowTask>(
             predicate: #Predicate<FlowTask> { task in
                 !task.isArchived && task.project == nil && !task.isCompleted
@@ -79,7 +87,7 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
         return try modelContext.fetch(descriptor)
     }
 
-    public func fetchTodayTasks() async throws -> [FlowTask] {
+    public func fetchTodayTasks() throws -> [FlowTask] {
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: .now)
         let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
@@ -100,7 +108,7 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
         return try modelContext.fetch(descriptor)
     }
 
-    public func fetchOverdueTasks() async throws -> [FlowTask] {
+    public func fetchOverdueTasks() throws -> [FlowTask] {
         let startOfToday = Calendar.current.startOfDay(for: .now)
 
         let descriptor = FetchDescriptor<FlowTask>(
@@ -113,7 +121,7 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
         return try modelContext.fetch(descriptor)
     }
 
-    public func fetchUpcomingTasks(days: Int) async throws -> [FlowTask] {
+    public func fetchUpcomingTasks(days: Int) throws -> [FlowTask] {
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: .now)
         let endDate = calendar.date(byAdding: .day, value: days, to: startOfToday)!
@@ -128,7 +136,7 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
         return try modelContext.fetch(descriptor)
     }
 
-    public func fetchTasksForProject(_ projectID: UUID) async throws -> [FlowTask] {
+    public func fetchTasksForProject(_ projectID: UUID) throws -> [FlowTask] {
         let descriptor = FetchDescriptor<FlowTask>(
             predicate: #Predicate<FlowTask> { task in
                 !task.isArchived && task.project?.id == projectID
@@ -138,7 +146,7 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
         return try modelContext.fetch(descriptor)
     }
 
-    public func searchTasks(query: String) async throws -> [FlowTask] {
+    public func searchTasks(query: String) throws -> [FlowTask] {
         let descriptor = FetchDescriptor<FlowTask>(
             predicate: #Predicate<FlowTask> { task in
                 !task.isArchived && (
@@ -153,12 +161,12 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
 
     // MARK: - Projects
 
-    public func createProject(_ project: FlowProject) async throws {
+    public func createProject(_ project: FlowProject) throws {
         modelContext.insert(project)
         try modelContext.save()
     }
 
-    public func fetchAllProjects() async throws -> [FlowProject] {
+    public func fetchAllProjects() throws -> [FlowProject] {
         let descriptor = FetchDescriptor<FlowProject>(
             predicate: #Predicate<FlowProject> { !$0.isArchived },
             sortBy: [SortDescriptor(\.order), SortDescriptor(\.createdAt)]
@@ -166,7 +174,7 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
         return try modelContext.fetch(descriptor)
     }
 
-    public func deleteProject(_ project: FlowProject) async throws {
+    public func deleteProject(_ project: FlowProject) throws {
         project.isArchived = true
         project.archivedAt = .now
         try modelContext.save()
@@ -174,19 +182,19 @@ public actor SwiftDataTaskRepository: TaskRepositoryProtocol {
 
     // MARK: - Tags
 
-    public func createTag(_ tag: FlowTag) async throws {
+    public func createTag(_ tag: FlowTag) throws {
         modelContext.insert(tag)
         try modelContext.save()
     }
 
-    public func fetchAllTags() async throws -> [FlowTag] {
+    public func fetchAllTags() throws -> [FlowTag] {
         let descriptor = FetchDescriptor<FlowTag>(
             sortBy: [SortDescriptor(\.name)]
         )
         return try modelContext.fetch(descriptor)
     }
 
-    public func findOrCreateTag(name: String) async throws -> FlowTag {
+    public func findOrCreateTag(name: String) throws -> FlowTag {
         let normalizedName = name.lowercased().trimmingCharacters(in: .whitespaces)
         let descriptor = FetchDescriptor<FlowTag>(
             predicate: #Predicate<FlowTag> { $0.name == normalizedName }

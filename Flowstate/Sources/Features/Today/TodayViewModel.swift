@@ -72,15 +72,9 @@ public final class TodayViewModel {
         errorMessage = nil
 
         do {
-            async let overdueResult = repository.fetchOverdueTasks()
-            async let todayResult = repository.fetchTodayTasks()
-
-            overdueTasks = try await overdueResult
-            todayTasks = try await todayResult
-
-            // Get completed today separately
-            let allToday = try await repository.fetchTodayTasks()
-            completedToday = allToday.filter(\.isCompleted)
+            overdueTasks = try repository.fetchOverdueTasks()
+            todayTasks = try repository.fetchTodayTasks()
+            completedToday = todayTasks.filter(\.isCompleted)
         } catch {
             errorMessage = "Couldn't load today's plan. Pull to try again."
         }
@@ -91,9 +85,9 @@ public final class TodayViewModel {
     public func toggleComplete(_ task: FlowTask) async {
         do {
             if task.isCompleted {
-                try await repository.uncompleteTask(task)
+                try repository.uncompleteTask(task)
             } else {
-                try await repository.completeTask(task)
+                try repository.completeTask(task)
             }
             await loadToday()
         } catch {
@@ -104,7 +98,7 @@ public final class TodayViewModel {
     public func scheduleForToday(_ task: FlowTask) async {
         task.scheduledDate = Calendar.current.startOfDay(for: .now)
         do {
-            try await repository.updateTask(task)
+            try repository.updateTask(task)
             await loadToday()
         } catch {
             errorMessage = "Couldn't schedule task."

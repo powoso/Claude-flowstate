@@ -5,7 +5,7 @@ import Foundation
 // Core task entity. Supports projects, tags, recurrence, time estimates, and focus sessions.
 
 @Model
-public final class FlowTask: @unchecked Sendable {
+public final class FlowTask {
     // MARK: - Identity
     #Unique<FlowTask>([\.id])
 

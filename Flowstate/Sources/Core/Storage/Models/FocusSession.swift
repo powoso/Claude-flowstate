@@ -5,7 +5,7 @@ import Foundation
 // Tracks focus/pomodoro sessions linked to tasks.
 
 @Model
-public final class FocusSession: @unchecked Sendable {
+public final class FocusSession {
     #Unique<FocusSession>([\.id])
 
     public var id: UUID
