@@ -5,7 +5,7 @@ import Foundation
 // Organizes tasks into projects with sections, color, and icon.
 
 @Model
-public final class FlowProject {
+public final class FlowProject: @unchecked Sendable {
     #Unique<FlowProject>([\.id])
 
     public var id: UUID
@@ -74,7 +74,7 @@ public final class FlowProject {
 // MARK: - FlowSection (sub-grouping within a project)
 
 @Model
-public final class FlowSection {
+public final class FlowSection: @unchecked Sendable {
     #Unique<FlowSection>([\.id])
 
     public var id: UUID

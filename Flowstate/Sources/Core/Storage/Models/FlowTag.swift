@@ -5,7 +5,7 @@ import Foundation
 // Lightweight tagging system. Tags can be applied to any task.
 
 @Model
-public final class FlowTag {
+public final class FlowTag: @unchecked Sendable {
     #Unique<FlowTag>([\.id])
     #Index<FlowTag>([\.name])
 

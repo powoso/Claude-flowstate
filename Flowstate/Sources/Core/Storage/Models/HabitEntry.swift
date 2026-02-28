@@ -5,7 +5,7 @@ import Foundation
 // Habit tracking with streak calculation and heat map data.
 
 @Model
-public final class FlowHabit {
+public final class FlowHabit: @unchecked Sendable {
     #Unique<FlowHabit>([\.id])
 
     public var id: UUID
@@ -105,7 +105,7 @@ public final class FlowHabit {
 // MARK: - HabitEntry (single day's completion)
 
 @Model
-public final class HabitEntry {
+public final class HabitEntry: @unchecked Sendable {
     #Unique<HabitEntry>([\.id])
 
     public var id: UUID
